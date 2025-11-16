@@ -1,6 +1,7 @@
 pub mod listener;
 pub mod consts;
 pub mod battery;
+pub mod bluetooth;
 
 use listener::SocketHandler;
 use battery::{BatteryStateListener, BatteryPercentListener};
