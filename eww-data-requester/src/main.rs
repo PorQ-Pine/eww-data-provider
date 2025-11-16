@@ -1,6 +1,6 @@
 use std::env;
 use std::fs;
-use std::io::{self, Read};
+use std::io::{self, BufReader, BufRead};
 use std::os::unix::net::UnixListener;
 use std::path::Path;
 
@@ -29,10 +29,13 @@ fn main() -> io::Result<()> {
 
     for stream in listener.incoming() {
         match stream {
-            Ok(mut stream) => {
-                let mut string = String::new();
-                stream.read_to_string(&mut string)?;
-                println!("{}", string);
+            Ok(stream) => {
+                let mut reader = BufReader::new(stream);
+                let mut line = String::new();
+                while reader.read_line(&mut line)? > 0 {
+                    print!("{}", line);
+                    line.clear();
+                }
             }
             Err(e) => {
                 eprintln!("Error accepting connection: {}", e);

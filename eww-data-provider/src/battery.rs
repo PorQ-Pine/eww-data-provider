@@ -30,7 +30,7 @@ impl SocketHandler for BatteryStateListener {
             if last_content.as_ref() != Some(&content) {
                 if !content.is_empty() {
                     debug!("Writing state: {}", content);
-                    unix.write_all(content.as_bytes())
+                    unix.write_all(format!("{}\n", content).as_bytes())
                         .await
                         .expect("Failed to write to socket");
                 }
