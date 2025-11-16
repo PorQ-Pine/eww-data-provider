@@ -1,3 +1,5 @@
+use log::*;
+
 #[allow(async_fn_in_trait)]
 pub trait SocketHandler {
     const SOCKET_NAME: &'static str;
@@ -9,12 +11,12 @@ pub trait SocketHandler {
         loop {
             match tokio::net::UnixStream::connect(&path).await {
                 Ok(stream) => {
-                    eprintln!("Successfully connected to socket: {}", socket_path);
+                    info!("Successfully connected to socket: {}", socket_path);
                     tokio::time::sleep(tokio::time::Duration::from_millis(300)).await;
                     return stream;
                 }
                 Err(e) => {
-                    eprintln!("Waiting for socket at {}: {}", socket_path, e);
+                    debug!("Waiting for socket at {}: {}", socket_path, e);
                     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
                 }
             }

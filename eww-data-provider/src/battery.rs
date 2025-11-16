@@ -1,7 +1,6 @@
 use inotify::{EventMask, Inotify, WatchMask};
 use std::path::PathBuf;
 use tokio::{fs::read_to_string, io::AsyncWriteExt};
-
 use crate::{consts::BATTERY_DEVICE, listener::SocketHandler};
 
 pub struct BatteryStateListener;

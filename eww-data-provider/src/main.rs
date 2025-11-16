@@ -4,9 +4,12 @@ pub mod battery;
 
 use listener::SocketHandler;
 use battery::{BatteryStateListener, BatteryPercentListener};
+use log::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
+    debug!("Starting eww-data-provider");
 
     let battery_state = BatteryStateListener;
     tokio::spawn(async move {
