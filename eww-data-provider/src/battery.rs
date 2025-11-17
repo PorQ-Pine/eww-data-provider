@@ -50,7 +50,7 @@ impl SocketHandler for BatteryStateListener {
             .expect("Failed to read line from udevadm monitor")
         {
             // if line.contains("ACTION=change") {
-            sleep(Duration::from_millis(250)).await;
+            sleep(Duration::from_millis(100)).await;
             info!("Battery state change event detected");
             let current_state = get_battery_info(&path).await;
             if previous_state != current_state {
