@@ -3,6 +3,7 @@ pub mod consts;
 pub mod battery;
 pub mod bluetooth;
 pub mod backlight;
+pub mod dunst; // Add this line
 
 use listener::SocketHandler;
 use battery::{BatteryStateListener, BatteryPercentListener};
