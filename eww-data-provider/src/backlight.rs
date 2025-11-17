@@ -14,9 +14,8 @@ const PATH_BASE: &str = "/sys/class/backlight";
 async fn get_brightness(path: &PathBuf) -> String {
     read_to_string(path)
         .await
-        .unwrap_or_else(|_| panic!("Failed to read brightness from {:?}", path))
-        .trim()
-        .to_string()
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|_| "120".to_string())
 }
 
 pub struct CoolBacklightListener;

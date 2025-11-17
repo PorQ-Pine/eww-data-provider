@@ -1,6 +1,8 @@
+use std::time::Duration;
+
 use async_trait::async_trait;
 use log::*;
-use tokio::io::AsyncWriteExt;
+use tokio::{io::AsyncWriteExt, time::sleep};
 
 #[async_trait]
 pub trait SocketHandler {
@@ -33,6 +35,8 @@ pub trait SocketHandler {
         if let Err(e) = unix.write_all(str.as_bytes()).await {
             error!("Failed to write to socket: {}", e);
             *unix = self.open_socket().await;
+            sleep(Duration::from_millis(100)).await;
+            self.send_unix(unix, str).await;
         }
     }
 }
