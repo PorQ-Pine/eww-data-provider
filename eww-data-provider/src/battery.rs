@@ -2,10 +2,19 @@ use crate::{consts::BATTERY_DEVICE, listener::SocketHandler};
 use std::path::PathBuf;
 use tokio::{
     fs::read_to_string,
-    time::{Duration, interval},
+    io::{AsyncBufReadExt, BufReader},
+    process::Command,
 };
 use log::*;
 use async_trait::async_trait;
+
+async fn get_battery_info(path: &PathBuf) -> String {
+    read_to_string(path)
+        .await
+        .unwrap_or_else(|_| panic!("Failed to read battery info from {:?}", path))
+        .trim()
+        .to_string()
+}
 
 pub struct BatteryStateListener;
 
@@ -14,26 +23,39 @@ impl SocketHandler for BatteryStateListener {
     const SOCKET_NAME: &'static str = "battery_state";
 
     async fn start(&self, unix: &mut tokio::net::UnixStream) {
+        info!("Starting BatteryStateListener");
         let mut path = PathBuf::from("/sys/class/power_supply/");
         path.push(BATTERY_DEVICE);
         path.push("status");
 
-        let mut last_content: Option<String> = None;
-        let mut interval = interval(Duration::from_millis(500));
+        let mut previous_state = get_battery_info(&path).await;
+        self.send_unix(unix, previous_state.clone()).await;
 
-        loop {
-            interval.tick().await;
-            let content = read_to_string(&path)
-                .await
-                .expect("Failed to read battery status");
-            let content = content.trim().to_string();
+        let mut cmd = Command::new("udevadm")
+            .arg("monitor")
+            .arg("--subsystem-match=power_supply")
+            .arg("--property")
+            .stdout(std::process::Stdio::piped())
+            .spawn()
+            .expect("Failed to spawn udevadm monitor command");
 
-            if last_content.as_ref() != Some(&content) {
-                if !content.is_empty() {
-                    debug!("Writing state: {}", content);
-                    self.send_unix(unix, content.clone()).await;
+        let stdout = cmd.stdout.take().expect("Failed to take stdout");
+        let mut reader = BufReader::new(stdout).lines();
+
+        while let Some(line) = reader
+            .next_line()
+            .await
+            .expect("Failed to read line from udevadm monitor")
+        {
+            if line.contains("ACTION=change") {
+                info!("Battery state change event detected");
+                let current_state = get_battery_info(&path).await;
+                if previous_state != current_state {
+                    self.send_unix(unix, current_state.clone()).await;
+                    previous_state = current_state;
+                } else {
+                    debug!("Battery state is the same");
                 }
-                last_content = Some(content);
             }
         }
     }
@@ -46,25 +68,39 @@ impl SocketHandler for BatteryPercentListener {
     const SOCKET_NAME: &'static str = "battery_percent";
 
     async fn start(&self, unix: &mut tokio::net::UnixStream) {
+        info!("Starting BatteryPercentListener");
         let mut path = PathBuf::from("/sys/class/power_supply/");
         path.push(BATTERY_DEVICE);
         path.push("capacity");
 
-        let mut last_content: Option<String> = None;
-        let mut interval = interval(Duration::from_secs(5));
+        let mut previous_percent = get_battery_info(&path).await;
+        self.send_unix(unix, previous_percent.clone()).await;
 
-        loop {
-            interval.tick().await;
-            let content = read_to_string(&path)
-                .await
-                .expect("Failed to read battery capacity");
-            let content = content.trim().to_string();
+        let mut cmd = Command::new("udevadm")
+            .arg("monitor")
+            .arg("--subsystem-match=power_supply")
+            .arg("--property")
+            .stdout(std::process::Stdio::piped())
+            .spawn()
+            .expect("Failed to spawn udevadm monitor command");
 
-            if last_content.as_ref() != Some(&content) {
-                if !content.is_empty() {
-                    self.send_unix(unix, content.clone()).await;
+        let stdout = cmd.stdout.take().expect("Failed to take stdout");
+        let mut reader = BufReader::new(stdout).lines();
+
+        while let Some(line) = reader
+            .next_line()
+            .await
+            .expect("Failed to read line from udevadm monitor")
+        {
+            if line.contains("ACTION=change") {
+                info!("Battery percent change event detected");
+                let current_percent = get_battery_info(&path).await;
+                if previous_percent != current_percent {
+                    self.send_unix(unix, current_percent.clone()).await;
+                    previous_percent = current_percent;
+                } else {
+                    debug!("Battery percent is the same");
                 }
-                last_content = Some(content);
             }
         }
     }
