@@ -1,27 +1,32 @@
-pub mod listener;
-pub mod consts;
+pub mod backlight;
 pub mod battery;
 pub mod bluetooth;
-pub mod backlight;
+pub mod consts;
 pub mod dunst;
-pub mod player;
+pub mod listener;
 pub mod network;
+pub mod player;
+pub mod requests;
 pub mod volume;
 
-use listener::SocketHandler;
-use battery::{BatteryStateListener, BatteryPercentListener};
-use bluetooth::BluetoothListener;
 use backlight::CoolBacklightListener;
 use backlight::WarmBacklightListener;
-use player::PlayerListener;
-use network::NetworkListener;
-use volume::VolumeListener;
+use battery::{BatteryPercentListener, BatteryStateListener};
+use bluetooth::BluetoothListener;
+use enums::Requests;
+use listener::SocketHandler;
 use log::*;
+use network::NetworkListener;
+use player::PlayerListener;
+use tokio::sync::broadcast;
+use volume::VolumeListener;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
     debug!("Starting eww-data-provider");
+
+    let (tx, _rx) = broadcast::channel::<Requests>(16);
 
     let battery_state = BatteryStateListener;
     tokio::spawn(async move {
@@ -71,6 +76,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         volume_listener.start(&mut socket).await;
     });
 
-    tokio::signal::ctrl_c().await.expect("failed to listen for event");
+    let request_tx = tx.clone();
+    tokio::spawn(async move {
+        loop {
+            if let Err(e) = requests::start_request_listener(request_tx.clone()).await {
+                log::error!("Request listener failed: {}", e);
+            }
+        }
+    });
+
+    tokio::signal::ctrl_c()
+        .await
+        .expect("failed to listen for event");
     Ok(())
 }
