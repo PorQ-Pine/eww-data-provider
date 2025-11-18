@@ -1,10 +1,11 @@
 use async_trait::async_trait;
 use log::*;
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Duration};
 use tokio::{
     fs::read_to_string,
     io::{AsyncBufReadExt, BufReader},
     process::Command,
+    time::sleep,
 };
 
 use crate::listener::SocketHandler;
@@ -44,21 +45,25 @@ impl SocketHandler for CoolBacklightListener {
         let stdout = cmd.stdout.take().expect("Failed to take stdout");
         let mut reader = BufReader::new(stdout).lines();
 
-        while let Some(line) = reader
+        while let Some(_line) = reader
             .next_line()
             .await
             .expect("Failed to read line from udevadm monitor")
         {
-            if line.contains("ACTION=change") {
-                info!("Backlight change event detected");
-                let current_brightness = get_brightness(&path).await;
-                if previous_brightness != current_brightness {
-                    self.send_unix(unix, current_brightness.clone()).await;
-                    previous_brightness = current_brightness;
-                } else {
-                    debug!("Backlight brightness is the same");
-                }
+            //if line.contains("ACTION=change") {
+            // info!("Backlight change event detected");
+            sleep(Duration::from_millis(5)).await;
+            let current_brightness = get_brightness(&path).await;
+            debug!("current_brightness: {}, previous_brightness: {}", current_brightness, previous_brightness);
+            if previous_brightness != current_brightness {
+                debug!("Sending cool brightness: {}", current_brightness);
+                let new_brightness = ((current_brightness.parse::<u16>().unwrap() * 100 / 255) as u8).to_string();
+                self.send_unix(unix, new_brightness).await;
+                previous_brightness = current_brightness;
+            } else {
+                debug!("Backlight brightness is the same");
             }
+            //}
         }
     }
 }
@@ -89,21 +94,24 @@ impl SocketHandler for WarmBacklightListener {
         let stdout = cmd.stdout.take().expect("Failed to take stdout");
         let mut reader = BufReader::new(stdout).lines();
 
-        while let Some(line) = reader
+        while let Some(_line) = reader
             .next_line()
             .await
             .expect("Failed to read line from udevadm monitor")
         {
-            if line.contains("ACTION=change") {
-                info!("Backlight change event detected");
-                let current_brightness = get_brightness(&path).await;
-                if previous_brightness != current_brightness {
-                    self.send_unix(unix, current_brightness.clone()).await;
-                    previous_brightness = current_brightness;
-                } else {
-                    debug!("Backlight brightness is the same");
-                }
+            //if line.contains("ACTION=change") {
+            //info!("Backlight change event detected");
+            sleep(Duration::from_millis(5)).await;
+            let current_brightness = get_brightness(&path).await;
+            if previous_brightness != current_brightness {
+                debug!("Sending warm brightness: {}", current_brightness);
+                let new_brightness = ((current_brightness.parse::<u16>().unwrap() * 100 / 255) as u8).to_string();
+                self.send_unix(unix, new_brightness).await;
+                previous_brightness = current_brightness;
+            } else {
+                debug!("Backlight brightness is the same");
             }
+            //}
         }
     }
 }

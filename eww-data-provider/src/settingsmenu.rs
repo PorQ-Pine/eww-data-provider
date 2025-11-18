@@ -53,7 +53,7 @@ impl SettingsMenuListener {
 
     async fn is_visible() -> bool {
         let output = Command::new("eww")
-            .args(&["active-windows"])
+            .args(&["--no-daemonize", "active-windows"])
             .output()
             .await
             .expect("failed to execute command");
@@ -75,7 +75,7 @@ impl SettingsMenuListener {
 
     async fn close() {
         let _output = Command::new("eww")
-            .args(&["close", "control_center"])
+            .args(&["--no-daemonize", "close", "control_center"])
             .output()
             .await
             .expect("failed to execute command");
@@ -83,7 +83,7 @@ impl SettingsMenuListener {
 
     async fn open() {
         let _output = Command::new("eww")
-            .args(&["open", "control_center"])
+            .args(&["--no-daemonize", "open", "control_center"])
             .output()
             .await
             .expect("failed to execute command");
