@@ -26,7 +26,7 @@ impl SettingsMenuListener {
                         while new_is_visible == is_visible {
                             if counter > 1 {
                                 warn!("Failed to toggle window");
-                                if counter > 50 {
+                                if counter > 7 {
                                     error!("Critical toggle window");
                                     break;
                                 }

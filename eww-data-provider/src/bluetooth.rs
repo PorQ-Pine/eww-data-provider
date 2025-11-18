@@ -1,8 +1,11 @@
+use std::time::Duration;
+
 use async_trait::async_trait;
 use log::*;
 use tokio::io::AsyncBufReadExt;
 use tokio::io::BufReader;
 use tokio::process::Command;
+use tokio::time::sleep;
 
 use crate::listener::SocketHandler;
 use serde::{Deserialize, Serialize};
@@ -124,8 +127,9 @@ impl SocketHandler for BluetoothListener {
             .expect("Failed to read line from bluetoothctl monitor")
         {
             // debug!("bluetoothctl monitor line: {}", line);
-            if line.contains("Powered:") || line.contains("Connected:") || line.contains("RSSI:") {
+            if line.contains("Powered") || line.contains("Connected") || line.contains("RSSI:") || line.contains("PowerState") {
                 info!("Bluetooth event detected: {}", line);
+                sleep(Duration::from_millis(200)).await;
                 let bt_status = get_bt().await;
                 if previous_bt != bt_status {
                     self.send_unix(unix, bt_status.clone()).await;
