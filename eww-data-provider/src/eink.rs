@@ -26,7 +26,7 @@ enum BitDepth {
 
 enum Conversion {
     Tresholding, // T
-    Dithering, // D
+    Dithering(Dithering), // D
 }
 
 enum Redraw {
