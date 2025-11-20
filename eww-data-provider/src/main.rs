@@ -9,6 +9,7 @@ pub mod requests;
 pub mod volume;
 pub mod virtualkeyboard;
 pub mod settingsmenu;
+pub mod eink;
 
 use backlight::CoolBacklightListener;
 use backlight::WarmBacklightListener;
