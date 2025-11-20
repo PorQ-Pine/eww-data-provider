@@ -10,8 +10,8 @@ enum Dithering {
 
 // busctl --user set-property org.pinenote.PineNoteCtl /org/pinenote/PineNoteCtl org.pinenote.Ebc1 DriverMode y 0
 enum DriverMode {
-    Normal, //0
-    Fast, // 1
+    Normal((BitDepth, Redraw)), //0
+    Fast(Dithering), // 1
     // Doesn't work for me
     // Zero, // 8
 }
@@ -19,8 +19,8 @@ enum DriverMode {
 // RenderHints
 // Only matters in Normal mode
 enum BitDepth {
-    Y1,
-    Y2,
+    Y1(Conversion),
+    Y2(Conversion),
     Y4,
 }
 
@@ -37,4 +37,5 @@ enum Redraw {
 enum ScreenOptions {
     // busctl --user call org.pinenote.PineNoteCtl /org/pinenote/PineNoteCtl org.pinenote.Ebc1 GlobalRefresh
     FullRefresh,
+    ScreenMode(DriverMode),
 }
