@@ -78,6 +78,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut eink = EinkListener {
         channel_rx: tx.subscribe(),
         window_settings: true,
+        screen_orientation: 90,
         // gamma_channel_tx: gamma_channel_tx,
     };
     tokio::spawn(async move {

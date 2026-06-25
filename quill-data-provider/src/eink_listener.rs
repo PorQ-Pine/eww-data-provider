@@ -11,6 +11,7 @@ use crate::eink::{
 pub struct EinkListener {
     pub channel_rx: tokio::sync::broadcast::Receiver<Requests>,
     pub window_settings: bool,
+    pub screen_orientation: u16,
     // pub gamma_channel_tx: tokio::sync::mpsc::Sender<GammaControl>,
 }
 
@@ -58,6 +59,26 @@ impl EinkListener {
         let state = &run_cmd("eww --no-daemonize state").await;
         let screen_settings = EwwScreenConfig::get_eww_screen_config(state).await;
         debug!("Screen settings: {:?}", screen_settings);
+        // Always handle rotation
+        if screen_settings.screen_orientation != self.screen_orientation {
+            self.screen_orientation = screen_settings.screen_orientation;
+            let rotation_str = match self.screen_orientation {
+                0 => "normal",
+                90 => "90",
+                180 => "180",
+                270 => "270",
+                _ => {
+                    error!("Invalid rotation number?");
+                    return;
+                }
+            };
+            run_cmd(&format!("niri msg output DPI-1 transform {}", rotation_str)).await;
+            sleep(Duration::from_millis(500)).await;
+            run_cmd("eww --no-daemonize close bar").await;
+            sleep(Duration::from_millis(100)).await;
+            run_cmd("eww --no-daemonize open bar").await;
+            return;
+        }
         if self.window_settings != screen_settings.window_settings {
             self.window_settings = screen_settings.window_settings;
             if self.window_settings {

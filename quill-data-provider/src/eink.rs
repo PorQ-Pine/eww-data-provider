@@ -19,6 +19,7 @@ pub async fn refresh_screen() {
 #[derive(Debug)]
 pub struct EwwScreenConfig {
     pub window_settings: bool,
+    pub screen_orientation: u16,
     driver_normal: bool,
     driver_fast: bool,
     dithering_bayer: bool,
@@ -69,6 +70,7 @@ impl EwwScreenConfig {
     pub async fn get_eww_screen_config(state: &str) -> Self {
         Self {
             window_settings: parse_bool(state, "per_window_settings"),
+            screen_orientation: parse_number(state, "screen_orientation", 90),
             driver_normal: parse_bool(state, "driver_normal_mode"),
             driver_fast: parse_bool(state, "driver_fast_mode"),
             dithering_bayer: parse_bool(state, "dithering_bayer"),

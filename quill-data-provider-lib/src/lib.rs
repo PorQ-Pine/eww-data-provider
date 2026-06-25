@@ -301,9 +301,11 @@ pub const WINDOW_SETTINGS_CONFIG_NAME: &str = "config.ron";
 
 pub fn load_window_settings(path: String) -> Vec<EinkWindowSetting> {
     if let Some(parent) = std::path::Path::new(&path).parent() {
-        // Not create_dir_all to avoid creating .config in encrypted home, when I mess things up
-        std::fs::create_dir(parent)
-            .unwrap_or_else(|e| panic!("Failed to create directories for {}: {}", path, e));
+        // Not create_dir_all to avoid creating .config in encrypted home, when I mess things up\
+        if !parent.exists() {
+            std::fs::create_dir(parent)
+                .unwrap_or_else(|e| panic!("Failed to create directories for {}: {}", path, e));
+        }
     }
 
     let contents = match std::fs::read_to_string(&path) {
