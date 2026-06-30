@@ -7,3 +7,9 @@ edition = "2024"
 enums = { path = "../enums" }
 postcard = { version = "1.0.8", features = ["alloc"] }
 serde = { version = "1.0.203", features = ["derive"] }
+
+[profile.release]
+debug = false
+strip = true
+lto = "thin"
+opt-level = 3

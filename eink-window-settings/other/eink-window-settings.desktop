@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=eInk Window Settings
 Comment=Configure eInk window settings
-Exec=env WAYLAND_DISPLAY= /usr/bin/eink-window-settings
+Exec=/usr/bin/eink-window-settings
 Icon=preferences-system
 Terminal=false
 Type=Application

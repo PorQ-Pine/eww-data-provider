@@ -6,6 +6,7 @@ use std::{
 };
 
 use eframe::egui;
+use egui_keyboard::Keyboard;
 use enum2egui::GuiInspect;
 use quill_data_provider_lib::{EinkWindowSetting, load_window_settings};
 
@@ -13,6 +14,12 @@ use quill_data_provider_lib::{EinkWindowSetting, load_window_settings};
 use quill_data_provider_lib::{WINDOW_SETTINGS_CONFIG_NAME, WINDOW_SETTINGS_HOME_CONFIG_DIR};
 
 use crate::style::style;
+
+const INFO_LABEL: &str = r#"Values which are global, but will be set for the currently focused window (or defaults if not apply, for the focused window):
+- Treshold level
+- Dithering type
+- Redraw delay
+- Fast mode"#;
 
 mod style;
 
@@ -99,6 +106,7 @@ fn main() -> eframe::Result {
         zoom_factor: 1.2,
         window_message: None,
         save_settings_path: path.to_string(),
+        keyboard: Keyboard::default(),
     };
 
     eframe::run_native(
@@ -107,7 +115,7 @@ fn main() -> eframe::Result {
         Box::new(|cc| {
             cc.egui_ctx.set_zoom_factor(1.2);
             cc.egui_ctx.set_visuals(egui::Visuals::light());
-            cc.egui_ctx.set_style(style());
+            cc.egui_ctx.set_global_style(style());
 
             Ok(Box::new(app))
         }),
@@ -121,11 +129,14 @@ struct MyApp {
     zoom_factor: f32,
     window_message: Option<String>,
     save_settings_path: String,
+    keyboard: Keyboard,
 }
 
 impl eframe::App for MyApp {
-    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
-        egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
+    fn ui(&mut self, ui: &mut eframe::egui::Ui, _frame: &mut eframe::Frame) {
+        self.keyboard.pump_events(ui.ctx());
+
+        egui::Panel::top("menu_bar").show_inside(ui, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
                 if ui.button("Save").clicked() {
                     let status = save_settings(&self.settings, &self.save_settings_path);
@@ -136,13 +147,13 @@ impl eframe::App for MyApp {
                 }
                 if ui.button("Zoom in").clicked() {
                     self.zoom_factor *= 1.2;
-                    ctx.set_zoom_factor(self.zoom_factor);
-                    ctx.request_repaint();
+                    ui.ctx().set_zoom_factor(self.zoom_factor);
+                    ui.ctx().request_repaint();
                 }
                 if ui.button("Zoom out").clicked() {
                     self.zoom_factor /= 1.2;
-                    ctx.set_zoom_factor(self.zoom_factor);
-                    ctx.request_repaint();
+                    ui.ctx().set_zoom_factor(self.zoom_factor);
+                    ui.ctx().request_repaint();
                 }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.button("Exit").clicked() {
@@ -152,24 +163,30 @@ impl eframe::App for MyApp {
             });
         });
 
-        egui::SidePanel::right("right_panel").show(ctx, |ui| {
+        egui::Panel::right("right_panel").show_inside(ui, |ui| {
             if let Ok(windows) = self.windows_rx.try_recv() {
                 self.windows = windows;
             }
             ui.label(format!("Current window ID's:\n{}", self.windows.join("\n")));
         });
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::both()
-                // .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible)
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            let settings_window_rect = ui.max_rect().intersect(self.keyboard.safe_rect(ui.ctx()));
+            egui::Window::new("Settings")
+                .fixed_rect(settings_window_rect)
+                .constrain_to(settings_window_rect)
+                .resizable(false)
+                .collapsible(false)
                 .show(ui, |ui| {
-                    ui.heading("eInk window settings");
-                    ui.label("Values which are global, but will be set for the currently focused window (or defaults if not apply, for the focused window):
-- Treshold level
-- Dithering type
-- Redraw delay
-- Fast mode");
-                    self.settings.ui_mut(ui);
+                    egui::ScrollArea::both()
+                        .stick_to_bottom(true)
+                        .stick_to_right(true)
+                        // .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible)
+                        .show(ui, |ui| {
+                            ui.heading("eInk window settings");
+                            ui.label(INFO_LABEL);
+                            self.settings.ui_mut(ui);
+                        });
                 });
         });
 
@@ -179,8 +196,8 @@ impl eframe::App for MyApp {
             egui::Window::new("Message")
                 .collapsible(false)
                 .resizable(false)
-                .default_pos(ctx.content_rect().center())
-                .show(ctx, |ui| {
+                .default_pos(ui.ctx().content_rect().center())
+                .show(ui, |ui| {
                     ui.vertical_centered_justified(|ui| {
                         ui.label(&message);
                         if ui.button("OK").clicked() {
@@ -193,5 +210,7 @@ impl eframe::App for MyApp {
                 self.window_message = Some(message);
             }
         }
+
+        self.keyboard.show(ui.ctx());
     }
 }

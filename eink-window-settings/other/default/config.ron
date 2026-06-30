@@ -4,10 +4,6 @@
         settings: Normal(Y2(Thresholding, DisableFastDrawing)),
     ),
     (
-        app_id: "org.freedesktop.Xwayland",
-        settings: Normal(Y1(Thresholding, _12)),
-    ),
-    (
         app_id: "obsidian",
         settings: Normal(Y4(FastDrawing((
             delay: 25,
@@ -46,5 +42,13 @@
     (
         app_id: "cosmic-wanderer",
         settings: Normal(Y4(DisableFastDrawing)),
+    ),
+    (
+        app_id: "org.freedesktop.Xwayland",
+        settings: Normal(Y1(Thresholding, _12)),
+    ),
+    (
+        app_id: "Com.github.xournalpp.xournalpp",
+        settings: Normal(Y1(Thresholding, _12)),
     ),
 ]

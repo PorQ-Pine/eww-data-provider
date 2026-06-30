@@ -4,11 +4,20 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-eframe = { version ="0.33.0", features = ["default"] }
-egui_extras = { version = "0.33.0", features = ["default", "image"] }
-log = "0.4.20"
-env_logger = "0.11.8"
+# Egui
+eframe = { version ="0.34.1", features = ["default"] }
+egui_extras = { version = "0.34.1", features = ["default", "image"] }
+enum2egui = "0.34.1"
+egui_keyboard = "0.6.0"
+# Other
+log = "0.4.33"
+env_logger = "0.11.11"
 quill-data-provider-lib = { path = "../quill-data-provider-lib" }
-enum2egui = "0.33.0"
-ron = "0.12.0"
+ron = "0.12.2"
 serde = { version = "1.0", features = ["derive"] }
+
+[profile.release]
+debug = false
+strip = true
+lto = "thin"
+opt-level = 3
