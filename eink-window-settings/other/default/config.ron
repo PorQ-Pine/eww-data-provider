@@ -51,4 +51,8 @@
         app_id: "Com.github.xournalpp.xournalpp",
         settings: Normal(Y1(Thresholding, _12)),
     ),
+    (
+        app_id: "Write",
+        settings: Normal(Y1(Thresholding, _8)),
+    ),
 ]
