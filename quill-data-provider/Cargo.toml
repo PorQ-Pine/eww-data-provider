@@ -14,6 +14,7 @@ enums = { path = "../enums" }
 postcard = { version = "1.1.3", features = ["postcard-derive", "alloc"] }
 anyhow = "1.0.100"
 quill-data-provider-lib = { path = "../quill-data-provider-lib" }
+niri-ipc = { path = "../../niri/niri-ipc/" }
 
 [profile.release]
 debug = false
