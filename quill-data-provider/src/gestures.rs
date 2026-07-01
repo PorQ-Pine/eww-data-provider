@@ -48,6 +48,7 @@ impl GesturesManager {
                         if let Event::WindowLayoutsChanged {..} = event {
                             if let Some((width, height, transform)) = get_screen_dimensions(&mut socket) {
                                 if width != width_s || height != height_s || transform != transform_s {
+                                    info!("Display layout change detected (niri socket)");
                                     width_s = width;
                                     height_s = height;
                                     transform_s = transform;
@@ -57,18 +58,32 @@ impl GesturesManager {
                         }
                     }
                     _ = child.wait() => {
+                        info!("lisgd exited unexpectedly");
                         self.restart_lisgd(width_s, height_s, transform_s).await;
+                    }
+                    // Just to be sure (when no windows are around, but we are using only gestures that affect windows)
+                    // TODO: Add a proper niri change output properties callback
+                    _ = tokio::time::sleep(Duration::from_secs(10)) => {
+                        if let Some((width, height, transform)) = get_screen_dimensions(&mut socket) {
+                            if width != width_s || height != height_s || transform != transform_s {
+                                info!("Display layout change detected (poll)");
+                                width_s = width;
+                                height_s = height;
+                                transform_s = transform;
+                                self.restart_lisgd(width_s, height_s, transform_s).await;
+                            }
+                        }
                     }
                 }
             } else {
                 warn!("There is no lisgd running");
                 self.restart_lisgd(width_s, height_s, transform_s).await;
             }
-            tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }
 
     async fn restart_lisgd(&mut self, width: i32, height: i32, transform: Transform) {
+        info!("Calling restart lisgd");
         if let Some(mut old_child) = self.child.take() {
             info!("Display layout change detected. Killing old lisgd instance...");
             let _ = old_child.kill().await;
@@ -85,8 +100,8 @@ impl GesturesManager {
         let command_str = format!(
             r#"lisgd -d /dev/input/by-path/platform-fe5e0000.i2c-event \
                   -w {} -h {} -o {} \
-                  -g "2,LR,*,M,R,niri msg action focus-column-left" \
-                  -g "2,RL,*,M,R,niri msg action focus-column-right""#,
+                  -g "2,LR,*,M,R,niri msg action focus-column-right" \
+                  -g "2,RL,*,M,R,niri msg action focus-column-left""#,
             width, height, orientation
         );
 
